@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Currency Detector</title>
+    <style>
+        #img-container {
+            width: 500px;
+            height: auto;
+            
+        }
+    </style>
 </head>
 <body>
     
@@ -11,17 +18,20 @@
 <button type="button" onclick="init()">Start</button>
 <div id="webcam-container"></div>
 <div id="label-container"></div>
+<img id ="img-container"></img>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
 <script type="text/javascript">
     
     const URL = "./";
-
+prevImg =0
     let model, webcam, labelContainer, maxPredictions;
 
     async function init() {
         const modelURL = URL + "model.json";
         const metadataURL = URL + "metadata.json";
+      
+
 
         model = await tmImage.load(modelURL, metadataURL);
         maxPredictions = model.getTotalClasses();
@@ -42,14 +52,43 @@
     async function loop() {
         webcam.update(); 
         await predict();
+
         window.requestAnimationFrame(loop);
     }
+    function displayImageInDiv(arg) {
+        if (prevImg==arg){
+            return
+        }
+        else{
+            prevImg = arg
+        }
+            const imgContainer = document.getElementById('img-container');
+            let imgSrc;
 
+            // Determine the image source based on the argument
+            if (arg === 2) {
+                imgSrc = './denomination/100.webp';
+            } else if (arg === 0) {
+                imgSrc = './denomination/200.jpeg';
+            } else if (arg === 1) {
+                imgSrc = './denomination/500.jpg';
+                
+            } else {
+                // Handle unsupported arguments
+                console.error('Unsupported argument:', arg);
+                return;
+            }
+            imgContainer.src = imgSrc
+        }
     async function predict() {
         const prediction = await model.predict(webcam.canvas);
         for (let i = 0; i < maxPredictions; i++) {
             const classPrediction =
                 prediction[i].className + ": " + prediction[i].probability.toFixed(2);
+                if (prediction[i].probability> 0.8){
+                    displayImageInDiv(i)
+                }
+
             labelContainer.childNodes[i].innerHTML = classPrediction;
         }
     }
